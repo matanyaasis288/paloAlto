@@ -8,14 +8,17 @@ export interface Data{"id" : string;
                       "timestamp" : number}
 
 export class DataQuery {
+    
     data : Data[] = []
+    
     operators : string[] = ["EQUAL", "GREATER_THAN", "LESS_THAN", "NOT", "OR", "AND"]
+    
     queryFunctions : {} = {"EQUAL" : this.EQUAL,
                            "GREATER_THAN" : this.GREATER_THAN,
                            "LESS_THAN" : this.LESS_THAN,
-                            "NOT" : this.NOT,
-                            "OR" : this.OR,
-                            "AND" : this.AND}
+                           "NOT" : this.NOT,
+                           "OR" : this.OR,
+                           "AND" : this.AND}
 
     /* API */
 
@@ -31,7 +34,7 @@ export class DataQuery {
         let queryType : string = this.getQueryType(rawQuery)
         let query : string = rawQuery.substring(queryType.length)
 
-        console.log(query)
+        console.log("DataQuery: GET [" + rawQuery + "]")
 
         let proccesed : string[] = this.process(queryType, query)
 

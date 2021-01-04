@@ -21,7 +21,7 @@ server.get("/store", (req, res) => {
         res.send("200 OK\n {}")
     }
     else{
-        console.log("Server: Got GET " + JSON.stringify(req.query))   
+        console.log("Server: GET " + JSON.stringify(req.query))   
         res.send(dataQuery.GET(req.query.query))
     }
     

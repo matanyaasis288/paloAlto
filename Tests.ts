@@ -14,4 +14,4 @@ dataQuery.POST({"id" : "2",
                 "views" : 1,
                 "timestamp" : 0})
 
-console.log(dataQuery.OR("GREATER_THAN", "timestamp", 3,"LESS_THAN", "timestamp", 1))
+console.log({"EQUAL" : 1}["a"])

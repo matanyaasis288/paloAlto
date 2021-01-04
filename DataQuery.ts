@@ -7,51 +7,24 @@ export class DataQuery {
     data : Data[] = []
     queryFunctions : {} = {"EQUAL" : this.EQUAL,
                            "GREATER_THAN" : this.GREATER_THAN,
-                           "LESS_THAN" : this.LESS_THAN}
+                           "LESS_THAN" : this.LESS_THAN,
+                            "NOT" : this.NOT,
+                            "OR" : this.OR,
+                            "AND" : this.AND}
 
     /* API */
     GET(rawQuery : string) : string {
         let queryType : string = this.getQueryType(rawQuery)
         let query : string = rawQuery.substring(queryType.length)
         let regExp : RegExp = /\(([^)]+)\)/
-        let matches : string[] = regExp.exec(query)
+        let parentExps : string[] = regExp.exec(query).map((exp) => exp.substring(1, exp.length - 1))
 
-        switch(queryType){
-            case "EQUAL" :
-                let pair : string[] = matches[0].substring(1, matches[0].length - 1).split(',') 
-                let property : string = pair[0]
-                let value : string = this.isNumberProperty(property) ? pair[1] : pair[1].substr(1,pair[1].length - 2)
-
-                console.log("DataQuery: EQUAL Property[" + property + "] Value[" + value + "]")
-
-                return JSON.stringify(this.EQUAL(property, value))
-
-            case "AND" :
-                
-                break; 
-            
-            case "OR" :
-                
-                break; 
-                
-            case "NOT" :
-                
-                break; 
-
-            case "GREATER_THAN" :
-                
-                break; 
-
-            case "LESS_THAN" :
-                
-                break; 
-
-            case "ERROR" :
-                return "ERROR"
-                break;     
-        }
-
-        return "ERROR"
+        return queryType == "EQUAL" ? this.processEqual(parentExps) :
+               queryType == "GREATER_THAN" ? this.processLessGreaterThan(queryType, parentExps) :
+               queryType == "LESS_THAN" ? this.processLessGreaterThan(queryType, parentExps) : 
+               queryType == "NOT" ? this.processNot(parentExps) :
+               queryType == "OR" ? this.processOrAnd(queryType, parentExps) :
+               queryType == "AND" ? this.processOrAnd(queryType, parentExps) : "ERROR"
     }
 
     POST(entity : Data){
@@ -91,8 +64,45 @@ export class DataQuery {
         let queried : Data[] = this.queryFunctions[queryType](propery, value, this.data)
         
         return this.data.filter((data2 : Data) => !queried.some((data1) => data1 === data2))
-    }    
+    }
+    
+    /* PROCESSORS */
+    processEqual(parentExps : string[]) : string{
+        let pair = parentExps[0].split(',')
+        console.log(pair)
+        let property : string = pair[0]
+        let value : string = this.isNumberProperty(property) ? pair[1] : pair[1].substr(1,pair[1].length - 2)
 
+        console.log("DataQuery: EQUAL Property[" + property + "] Value[" + value + "]")
+
+        return JSON.stringify(this.EQUAL(property, value))
+    }
+
+    processLessGreaterThan(queryType : string, parentExps : string[]) : string{
+        let pair = parentExps[0].split(',')
+        console.log(pair)
+        let property : string = pair[0]
+        let value : string = this.isNumberProperty(property) ? pair[1] : pair[1].substr(1,pair[1].length - 2)
+
+        console.log("DataQuery: " + queryType + " Property[" + property + "] Value[" + parseInt(value) + "]")
+
+        if(!this.isNumberProperty(property) || isNaN(parseInt(value))){
+            return "ERROR: " + queryType + " query supports only numeric values"
+        }
+
+        return queryType == "GREATER_THAN" ? JSON.stringify(this.GREATER_THAN(property, parseInt(value))) :
+                                             JSON.stringify(this.LESS_THAN(property, parseInt(value)))   
+    }
+
+    processNot(parentExps : string[]) : string{
+        console.log(parentExps)
+        return parentExps[0]
+    }
+
+    processOrAnd(queryType : string, parentExps : string[]) : string{
+        console.log(parentExps)
+        return parentExps[0]
+    }
 
     /* HELPERS */
     isQuery : (queryType :string, rawQuery : string) => boolean =

@@ -1,11 +1,23 @@
-
 /* TYPES */
 
-export interface Data{"id" : string;
-                      "title" : string;
-                      "content" : string;
-                      "views" : number;
-                      "timestamp" : number}
+export interface Data{
+    "id" : string;
+    "title" : string;
+    "content" : string;
+    "views" : number;
+    "timestamp" : number
+}
+
+export interface Query{
+    tag : "Query";
+    type? : string;
+    property : string;
+    value : string
+}
+
+export const makeQuery = 
+    (property : string, value : string, type? :string): Query => ({tag: "Query", type: type, property: property, value: value});
+
 
 export class DataQuery {
     
@@ -36,17 +48,13 @@ export class DataQuery {
 
         console.log("DataQuery: GET [" + rawQuery + "]")
 
-        let proccesed : string[] = this.process(queryType, query)
+        let proccesed : Query[] = this.process(queryType, query)
 
-        let reqData =   queryType == "EQUAL" ? this.EQUAL(proccesed[0], proccesed[1]) :
-                        queryType == "GREATER_THAN" ? this.GREATER_THAN(proccesed[0], proccesed[1]) :
-                        queryType == "LESS_THAN" ? this.LESS_THAN(proccesed[0], proccesed[1]) : 
-                        queryType == "NOT" ? this.NOT(proccesed[0], proccesed[1], proccesed[2]) :
-                        queryType == "OR" ? this.OR(proccesed[0], proccesed[1], proccesed[2], proccesed[3], proccesed[4], proccesed[5]) :
-                        queryType == "AND" ? this.AND(proccesed[0], proccesed[1], proccesed[2], proccesed[3], proccesed[4], proccesed[5]) : 
-                        {Error : "No such query type"}
-        
-        return JSON.stringify(reqData)
+        console.log(proccesed)
+
+        let reqData : Data[] = this.queryFunctions[queryType](proccesed, this.data, this) 
+                        
+        return JSON.stringify(reqData,null, 2)
     }   
 
     /**
@@ -57,10 +65,17 @@ export class DataQuery {
     * 
     * @return {type} Return value description. 
     */
-    POST(entity : Data){
+    POST(data : string) : string{
         /* filter out entity with the same id, if exist */
+        console.log("Post data: " + data)
+        let entity : Data = JSON.parse(data)
+
         this.data = this.data.filter((e : Data) => e.id !== entity.id)
         this.data.push(entity)
+
+        console.log(JSON.stringify(this.data))
+
+        return "200 OK\n {}"
     }
 
     /**
@@ -71,9 +86,12 @@ export class DataQuery {
     * 
     * @return {type} Return value description. 
     */
-    EQUAL(property : string, value : string , data : Data[] = this.data) : Data[]{
-        return data.filter((e : Data) => (property === "views" || property === "timestamp") ? e[property] === parseInt(value) :
-                                                                                              e[property] === value)
+    EQUAL(query : Query[], data : Data[], dataQuery : DataQuery) : Data[]{
+        console.log(query)
+
+        return data.filter((e : Data) => 
+            (query[0].property === "views" || query[0].property === "timestamp") ? e[query[0].property] === parseInt(query[0].value) :
+                                                                                   e[query[0].property] === query[0].value)
     }
 
     /**
@@ -84,8 +102,8 @@ export class DataQuery {
     * 
     * @return {type} Return value description. 
     */
-    GREATER_THAN(property : string, value : string, data : Data[] = this.data) : Data[]{
-        return data.filter((e : Data) => e[property] > parseInt(value))
+    GREATER_THAN(query : Query[], data : Data[], dataQuery : DataQuery) : Data[]{
+        return data.filter((e : Data) => e[query[0].property] > parseInt(query[0].value))
     }
 
     /**
@@ -96,8 +114,8 @@ export class DataQuery {
     * 
     * @return {type} Return value description. 
     */
-    LESS_THAN(property : string, value : string, data : Data[] = this.data) : Data[]{
-        return data.filter((e : Data) => e[property] < parseInt(value))
+    LESS_THAN(query : Query[], data : Data[], dataQuery : DataQuery) : Data[]{
+        return data.filter((e : Data) => e[query[0].property] < parseInt(query[0].value))
     }
 
     /**
@@ -108,9 +126,9 @@ export class DataQuery {
     * 
     * @return {type} Return value description. 
     */
-    AND(queryType1 : string, propery1 : string, value1 : string, queryType2 : string, propery2 : string, value2 : string) : Data[]{
-        let queried1 : Data[] = this.queryFunctions[queryType1](propery1, value1, this.data)
-        let queried2 : Data[] = this.queryFunctions[queryType2](propery2, value2, queried1)
+    AND(queries : Query[], data : Data[], dataQuery : DataQuery) : Data[]{
+        let queried1 : Data[] = dataQuery.queryFunctions[queries[0].type]([makeQuery(queries[0].property, queries[0].value, queries[0].type)], dataQuery.data, dataQuery)
+        let queried2 : Data[] = dataQuery.queryFunctions[queries[1].type]([makeQuery(queries[1].property, queries[1].value, queries[1].type)], queried1, dataQuery)
 
         return queried2
     }
@@ -123,9 +141,9 @@ export class DataQuery {
     * 
     * @return {type} Return value description. 
     */
-    OR(queryType1 : string, propery1 : string, value1 : string, queryType2 : string, propery2 : string, value2 : string) : Data[]{
-        let queried1 : Data[] = this.queryFunctions[queryType1](propery1, value1, this.data)
-        let queried2 : Data[] = this.queryFunctions[queryType2](propery2, value2, this.data)
+    OR(queries : Query[], data : Data[], dataQuery : DataQuery) : Data[]{
+        let queried1 : Data[] = dataQuery.queryFunctions[queries[0].type]([makeQuery(queries[0].property, queries[0].value, queries[0].type)], dataQuery.data, dataQuery)
+        let queried2 : Data[] = dataQuery.queryFunctions[queries[1].type]([makeQuery(queries[1].property, queries[1].value, queries[1].type)], dataQuery.data, dataQuery)
         let filteredQueried2 : Data[] = queried2.filter((data2 : Data) => !queried1.some((data1) => data1 === data2))
 
         return queried1.concat(filteredQueried2)
@@ -139,10 +157,10 @@ export class DataQuery {
     * 
     * @return {type} Return value description. 
     */
-    NOT(queryType : string, propery : string, value : string) : Data[]{
-        let queried : Data[] = this.queryFunctions[queryType](propery, value, this.data)
+    NOT(query : Query[], data : Data[], dataQuery : DataQuery) : Data[]{
+        let queried : Data[] = dataQuery.queryFunctions[query[0].type]([makeQuery(query[0].property, query[0].value, query[0].type)], dataQuery.data, dataQuery)
         
-        return this.data.filter((data2 : Data) => !queried.some((data1) => data1 === data2))
+        return dataQuery.data.filter((data2 : Data) => !queried.some((data1) => data1 === data2))
     }
     
     /* PROCESSORS */
@@ -155,14 +173,16 @@ export class DataQuery {
     * 
     * @return {type} Return value description.
     */
-   process(queryType : string, query : string) : string[] {
+   process(queryType : string, query : string) : Query[] {
     console.log("DataQuery: Proccesing " + queryType)
+
     return  queryType == "EQUAL" ? this.processEqual(query) :
             queryType == "GREATER_THAN" ? this.processLessGreaterThan(queryType, query) :
             queryType == "LESS_THAN" ? this.processLessGreaterThan(queryType, query) : 
             queryType == "NOT" ? this.processNot(query) :
             queryType == "OR" ? this.processOrAnd(queryType, query) :
-            queryType == "AND" ? this.processOrAnd(queryType, query) : ["ERROR"]
+            queryType == "AND" ? this.processOrAnd(queryType, query) :
+            undefined
     }
 
     /**
@@ -173,7 +193,7 @@ export class DataQuery {
     * 
     * @return {type} Return value description.
     */
-    processEqual(query : string) : string[]{
+    processEqual(query : string) : Query[] {
         let regExp : RegExp = /\(([^)]+)\)/
         let parentExps : string[] = regExp.exec(query).map((exp) => exp.substring(1, exp.length - 1))
         let pair = parentExps[0].split(',')
@@ -182,7 +202,7 @@ export class DataQuery {
 
         console.log("DataQuery: EQUAL Property[" + property + "] Value[" + value + "]")
 
-        return [property, value]
+        return [makeQuery(property, value, "EQUAL")]
     }
 
     /**
@@ -193,7 +213,7 @@ export class DataQuery {
     * 
     * @return {type} Return value description.
     */
-    processLessGreaterThan(queryType : string, query : string) : string[]{
+    processLessGreaterThan(queryType : string, query : string) : Query[]{
         let regExp : RegExp = /\(([^)]+)\)/
         let parentExps : string[] = regExp.exec(query).map((exp) => exp.substring(1, exp.length - 1))
         let pair = parentExps[0].split(',')
@@ -203,10 +223,10 @@ export class DataQuery {
         console.log("DataQuery: " + queryType + " Property[" + property + "] Value[" + parseInt(value) + "]")
 
         if(!this.isNumberProperty(property) || isNaN(parseInt(value))){
-            return ["ERROR: " + queryType + " query supports only numeric values"]
+            return undefined
         }
 
-        return [property, value] 
+        return [makeQuery(property, value, queryType)]
     }
 
     /**
@@ -217,12 +237,12 @@ export class DataQuery {
     * 
     * @return {type} Return value description.
     */
-    processNot(query : string) : string[]{
+    processNot(query : string) : Query[] {
         let inQueryType : string = this.getQueryType(query.substring(1, query.length - 1))
         let inQuery : string = query.substring(inQueryType.length)
-        let proccesedInQuery : string[] = this.process(inQueryType, inQuery)
+        let proccesedInQuery : Query[] = this.process(inQueryType, inQuery)
 
-        return [inQueryType].concat(proccesedInQuery)
+        return [makeQuery(proccesedInQuery[0].property, proccesedInQuery[0].value,proccesedInQuery[0].type)]
     }
 
     /**
@@ -233,7 +253,7 @@ export class DataQuery {
     * 
     * @return {type} Return value description.
     */
-    processOrAnd(queryType : string, query : string) : string[]{
+    processOrAnd(queryType : string, query : string) : Query[]{
         query = query.substring(1, query.length - 1)
 
         let inQueryType1 : string = this.operators[this.findFirstOperator(query)[0]]
@@ -244,10 +264,12 @@ export class DataQuery {
 
         console.log("DataQuery: " + queryType + " Query [" + query + "]")
 
-        let proccesedInQuery1 : string[] = this.process(inQueryType1, inQuery1)
-        let proccesedInQuery2 : string[] = this.process(inQueryType2, inQuery2)
+        let proccesedInQuery1 : Query[] = this.process(inQueryType1, inQuery1)
+        let proccesedInQuery2 : Query[] = this.process(inQueryType2, inQuery2)
 
-        return [inQueryType1].concat(proccesedInQuery1.concat([inQueryType2].concat(proccesedInQuery2)))
+        return [makeQuery(proccesedInQuery1[0].property, proccesedInQuery1[0].value, proccesedInQuery1[0].type),
+                makeQuery(proccesedInQuery2[0].property, proccesedInQuery2[0].value, proccesedInQuery2[0].type)]
+
     }
 
     /* HELPERS */

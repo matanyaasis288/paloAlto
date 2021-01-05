@@ -1,4 +1,4 @@
-/* TYPES */
+/************************************** TYPES **********************************************/
 
 export interface Data{
     "id" : string;
@@ -19,11 +19,24 @@ export const makeQuery =
     (property : string, value : string, type? :string): Query => ({tag: "Query", type: type, property: property, value: value});
 
 
+
+
+/*************************************************************************************************
+* Summary.
+* 
+* @class DataQuery 
+* 
+**************************************************************************************************/
 export class DataQuery {
     
     data : Data[] = []
     
-    operators : string[] = ["EQUAL", "GREATER_THAN", "LESS_THAN", "NOT", "OR", "AND"]
+    operators : string[] = ["EQUAL",
+                            "GREATER_THAN",
+                            "LESS_THAN",
+                            "NOT",
+                            "OR",
+                            "AND"]
     
     queryFunctions : {} = {"EQUAL" : this.EQUAL,
                            "GREATER_THAN" : this.GREATER_THAN,
@@ -32,16 +45,15 @@ export class DataQuery {
                            "OR" : this.OR,
                            "AND" : this.AND}
 
-    /* API */
+    /****************************************** API **************************************************/
 
-    /**
-    * Summary. 
+    /*************************************************************************************************
+    * Summary.
     * 
-    * @param {very_long_type} name           Description.
-    * @param {type}           very_long_name Description.
+    * @param {string} rawQuery raw query string sent from the client
     * 
-    * @return {type} Return value description. 
-    */
+    * @return {string} Return json string with the answer to the query. 
+    **************************************************************************************************/
     GET(rawQuery : string) : string {
         let queryType : string = this.getQueryType(rawQuery)
         let query : string = rawQuery.substring(queryType.length)
@@ -57,15 +69,14 @@ export class DataQuery {
         return JSON.stringify(reqData,null, 2)
     }   
 
-    /**
-    * Summary. 
+    /*************************************************************************************************
+    * Summary.
     * 
-    * @param {very_long_type} name           Description.
-    * @param {type}           very_long_name Description.
+    * @param {string} data  String representation of the Data object to add to the Data Query
     * 
-    * @return {type} Return value description. 
-    */
-    POST(data : string) : string{
+    * @return {boolean} Return if the POST action succeded
+    **************************************************************************************************/
+    POST(data : string) : true{
         /* filter out entity with the same id, if exist */
         console.log("Post data: " + data)
         let entity : Data = JSON.parse(data)
@@ -75,17 +86,18 @@ export class DataQuery {
 
         console.log(JSON.stringify(this.data))
 
-        return "200 OK\n {}"
+        return true
     }
 
-    /**
+    /*************************************************************************************************
     * Summary.
     * 
-    * @param {very_long_type} name           Description.
-    * @param {type}           very_long_name Description.
+    * @param {Query[]} query Description.
+    * @param {Data[]} data Description.
+    * @param {Data[]} dataQuery Description.
     * 
-    * @return {type} Return value description. 
-    */
+    * @return {Data[]} Return Data set  
+    **************************************************************************************************/
     EQUAL(query : Query[], data : Data[], dataQuery : DataQuery) : Data[]{
         console.log(query)
 
@@ -94,38 +106,38 @@ export class DataQuery {
                                                                                    e[query[0].property] === query[0].value)
     }
 
-    /**
+    /*************************************************************************************************
     * Summary.
     * 
     * @param {very_long_type} name           Description.
     * @param {type}           very_long_name Description.
     * 
     * @return {type} Return value description. 
-    */
+    **************************************************************************************************/
     GREATER_THAN(query : Query[], data : Data[], dataQuery : DataQuery) : Data[]{
         return data.filter((e : Data) => e[query[0].property] > parseInt(query[0].value))
     }
 
-    /**
+    /*************************************************************************************************
     * Summary.
     * 
     * @param {very_long_type} name           Description.
     * @param {type}           very_long_name Description.
     * 
     * @return {type} Return value description. 
-    */
+    **************************************************************************************************/
     LESS_THAN(query : Query[], data : Data[], dataQuery : DataQuery) : Data[]{
         return data.filter((e : Data) => e[query[0].property] < parseInt(query[0].value))
     }
 
-    /**
+    /*************************************************************************************************
     * Summary.
     * 
     * @param {very_long_type} name           Description.
     * @param {type}           very_long_name Description.
     * 
     * @return {type} Return value description. 
-    */
+    **************************************************************************************************/
     AND(queries : Query[], data : Data[], dataQuery : DataQuery) : Data[]{
         let queried1 : Data[] = dataQuery.queryFunctions[queries[0].type]([makeQuery(queries[0].property, queries[0].value, queries[0].type)], dataQuery.data, dataQuery)
         let queried2 : Data[] = dataQuery.queryFunctions[queries[1].type]([makeQuery(queries[1].property, queries[1].value, queries[1].type)], queried1, dataQuery)
@@ -133,14 +145,14 @@ export class DataQuery {
         return queried2
     }
 
-    /**
+    /*************************************************************************************************
     * Summary.
     * 
     * @param {very_long_type} name           Description.
     * @param {type}           very_long_name Description.
     * 
     * @return {type} Return value description. 
-    */
+    **************************************************************************************************/
     OR(queries : Query[], data : Data[], dataQuery : DataQuery) : Data[]{
         let queried1 : Data[] = dataQuery.queryFunctions[queries[0].type]([makeQuery(queries[0].property, queries[0].value, queries[0].type)], dataQuery.data, dataQuery)
         let queried2 : Data[] = dataQuery.queryFunctions[queries[1].type]([makeQuery(queries[1].property, queries[1].value, queries[1].type)], dataQuery.data, dataQuery)
@@ -149,30 +161,32 @@ export class DataQuery {
         return queried1.concat(filteredQueried2)
     }
 
-    /**
+    /*************************************************************************************************
     * Summary.
     * 
     * @param {very_long_type} name           Description.
     * @param {type}           very_long_name Description.
     * 
     * @return {type} Return value description. 
-    */
+    **************************************************************************************************/
     NOT(query : Query[], data : Data[], dataQuery : DataQuery) : Data[]{
         let queried : Data[] = dataQuery.queryFunctions[query[0].type]([makeQuery(query[0].property, query[0].value, query[0].type)], dataQuery.data, dataQuery)
         
         return dataQuery.data.filter((data2 : Data) => !queried.some((data1) => data1 === data2))
     }
     
-    /* PROCESSORS */
 
-    /**
+
+    /************************************** STRING PROCESSORS **********************************************/
+
+    /*************************************************************************************************
     * Summary.
     * 
     * @param {very_long_type} name           Description.
     * @param {type}           very_long_name Description.
     * 
-    * @return {type} Return value description.
-    */
+    * @return {type} Return value description. 
+    **************************************************************************************************/
    process(queryType : string, query : string) : Query[] {
     console.log("DataQuery: Proccesing " + queryType)
 
@@ -185,14 +199,14 @@ export class DataQuery {
             undefined
     }
 
-    /**
+    /*************************************************************************************************
     * Summary.
     * 
     * @param {very_long_type} name           Description.
     * @param {type}           very_long_name Description.
     * 
-    * @return {type} Return value description.
-    */
+    * @return {type} Return value description. 
+    **************************************************************************************************/
     processEqual(query : string) : Query[] {
         let regExp : RegExp = /\(([^)]+)\)/
         let parentExps : string[] = regExp.exec(query).map((exp) => exp.substring(1, exp.length - 1))
@@ -205,14 +219,14 @@ export class DataQuery {
         return [makeQuery(property, value, "EQUAL")]
     }
 
-    /**
+    /*************************************************************************************************
     * Summary.
     * 
     * @param {very_long_type} name           Description.
     * @param {type}           very_long_name Description.
     * 
-    * @return {type} Return value description.
-    */
+    * @return {type} Return value description. 
+    **************************************************************************************************/
     processLessGreaterThan(queryType : string, query : string) : Query[]{
         let regExp : RegExp = /\(([^)]+)\)/
         let parentExps : string[] = regExp.exec(query).map((exp) => exp.substring(1, exp.length - 1))
@@ -229,14 +243,14 @@ export class DataQuery {
         return [makeQuery(property, value, queryType)]
     }
 
-    /**
+    /*************************************************************************************************
     * Summary.
     * 
     * @param {very_long_type} name           Description.
     * @param {type}           very_long_name Description.
     * 
-    * @return {type} Return value description.
-    */
+    * @return {type} Return value description. 
+    **************************************************************************************************/
     processNot(query : string) : Query[] {
         let inQueryType : string = this.getQueryType(query.substring(1, query.length - 1))
         let inQuery : string = query.substring(inQueryType.length)
@@ -245,14 +259,14 @@ export class DataQuery {
         return [makeQuery(proccesedInQuery[0].property, proccesedInQuery[0].value,proccesedInQuery[0].type)]
     }
 
-    /**
+    /*************************************************************************************************
     * Summary.
     * 
     * @param {very_long_type} name           Description.
     * @param {type}           very_long_name Description.
     * 
-    * @return {type} Return value description.
-    */
+    * @return {type} Return value description. 
+    **************************************************************************************************/
     processOrAnd(queryType : string, query : string) : Query[]{
         query = query.substring(1, query.length - 1)
 
@@ -272,27 +286,29 @@ export class DataQuery {
 
     }
 
-    /* HELPERS */
 
-    /**
+
+    /************************************** HELPERS **********************************************/
+
+    /*************************************************************************************************
     * Summary.
     * 
     * @param {very_long_type} name           Description.
     * @param {type}           very_long_name Description.
     * 
-    *  @return {type} Return value description.
-    */
+    * @return {type} Return value description. 
+    **************************************************************************************************/
     isQuery : (queryType :string, rawQuery : string) => boolean =
         (queryType : string, rawQuery : string) => rawQuery.indexOf(queryType) == 0
 
-    /**
+    /*************************************************************************************************
     * Summary.
     * 
     * @param {very_long_type} name           Description.
     * @param {type}           very_long_name Description.
     * 
-    *  @return {type} Return value description.
-     */
+    * @return {type} Return value description. 
+    **************************************************************************************************/
     getQueryType : (rawQuery : string) => string = 
         (rawQuery : string) => this.isQuery("EQUAL", rawQuery) ? "EQUAL" :
                                this.isQuery("AND", rawQuery) ? "AND" :
@@ -301,24 +317,24 @@ export class DataQuery {
                                this.isQuery("GREATER_THAN", rawQuery) ? "GREATER_THAN" :
                                this.isQuery("LESS_THAN", rawQuery) ? "LESS_THAN" : "ERROR"
 
-    /**
+    /*************************************************************************************************
     * Summary.
     * 
     * @param {very_long_type} name           Description.
     * @param {type}           very_long_name Description.
     * 
-    * @return {type} Return value description.
-    */
+    * @return {type} Return value description. 
+    **************************************************************************************************/
     isNumberProperty = (property : string | number) => property === "views" || property === "timestamp"
 
-    /**
+    /*************************************************************************************************
     * Summary.
     * 
     * @param {very_long_type} name           Description.
     * @param {type}           very_long_name Description.
     * 
-    * @return {type} Return value description.
-    */
+    * @return {type} Return value description. 
+    **************************************************************************************************/
    findFirstOperator = (query : string) : number[] => {
      return this.operators.map((op, i) => [i, query.indexOf(op)])
                           .reduce((acc, curr) => (curr[1] < acc[1] && curr[1] != -1) ? curr : acc, [-1, Number.MAX_VALUE]) 

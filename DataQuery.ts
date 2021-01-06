@@ -101,7 +101,7 @@ export class DataQuery {
     * 
     * @return {boolean} Return if the POST action succeded
     **************************************************************************************************/
-    POST(data : string) : true{
+    POST(data : string) : boolean{
         /* filter out entity with the same id, if exist */
         let entity : Data = JSON.parse(data)
 
@@ -120,7 +120,7 @@ export class DataQuery {
     * @param {Data[]} data Description.
     * @param {Data[]} dataQuery Description.
     * 
-    * @return {Data[]} Return Data set  
+    * @return {Data[]} Return Data set that satasfied  
     **************************************************************************************************/
     EQUAL(query : Query[], data : Data[], dataQuery : DataQuery) : Data[]{
         return data.filter((e : Data) => 
@@ -154,7 +154,7 @@ export class DataQuery {
     LESS_THAN(query : Query[], data : Data[], dataQuery : DataQuery) : Data[]{
         if(!dataQuery.isNumberProperty(query[0].property) || isNaN(parseInt(query[0].value)))
             throw new Error("ERROR while parsing query")
-            
+
         return data.filter((e : Data) => e[query[0].property] < parseInt(query[0].value))
     }
 

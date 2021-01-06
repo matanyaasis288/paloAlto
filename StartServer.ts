@@ -18,7 +18,6 @@ server.use(bodyParser.urlencoded({
   extended: true
 })); 
 
-  
 
 /* Construct DataQuery object */
 let dataQuery = new DQ.DataQuery()
@@ -26,8 +25,14 @@ let dataQuery = new DQ.DataQuery()
 server.get("/store", (req, res) => {
     if(req.query.query !== undefined){
         console.log("Server: GET " + JSON.stringify(req.query))   
-        res.send(dataQuery.GET(req.query.query))
-        console.log("Server: RETURN " + dataQuery.GET(req.query.query)) 
+        try{
+            res.send(dataQuery.GET(req.query.query))
+            res.status(200)
+            console.log("Server: RETURN " + dataQuery.GET(req.query.query))
+        }
+        catch(e){
+            res.send("ERROR: parsing error")
+        }      
     }
     else{
         res.send("ERROR: you must provide post or query")

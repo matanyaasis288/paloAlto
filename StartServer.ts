@@ -31,7 +31,7 @@ server.get("/store", (req, res) => {
             console.log("Server: RETURN " + dataQuery.GET(req.query.query))
         }
         catch(e){
-            res.send("ERROR: parsing error")
+            res.send(e.Message)
         }      
     }
     else{

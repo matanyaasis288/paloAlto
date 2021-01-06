@@ -114,13 +114,13 @@ export class DataQuery {
     }
 
     /*************************************************************************************************
-    * Summary.
+    * Summary. Runs equal query on data
     * 
-    * @param {Query[]} query Description.
-    * @param {Data[]} data Description.
-    * @param {Data[]} dataQuery Description.
+    * @param {Query[]} query List of queries to run, here the length will always be 1.
+    * @param {Data[]} data The data to run the query on.
+    * @param {dataQuery} dataQuery.
     * 
-    * @return {Data[]} Return Data set that satasfied  
+    * @return {Data[]} Return Data set that satisfied the given query
     **************************************************************************************************/
     EQUAL(query : Query[], data : Data[], dataQuery : DataQuery) : Data[]{
         return data.filter((e : Data) => 
@@ -129,42 +129,45 @@ export class DataQuery {
     }
 
     /*************************************************************************************************
-    * Summary.
+    * Summary. Runs greater than query on data
     * 
-    * @param {very_long_type} name           Description.
-    * @param {type}           very_long_name Description.
+    * @param {Query[]} query List of queries to run, here the length will always be 1.
+    * @param {Data[]} data The data to run the query on.
+    * @param {dataQuery} dataQuery.
     * 
-    * @return {type} Return value description. 
+    * @return {Data[]} Return Data set that satisfied the given query
     **************************************************************************************************/
     GREATER_THAN(query : Query[], data : Data[], dataQuery : DataQuery) : Data[]{
         if(!dataQuery.isNumberProperty(query[0].property) || isNaN(parseInt(query[0].value)))
-            throw new Error("ERROR while parsing query")
+            throw new Error("ERROR: property must be a number property, value must be a number")
         
         return data.filter((e : Data) => e[query[0].property] > parseInt(query[0].value))
     }
 
     /*************************************************************************************************
-    * Summary.
+    * Summary. Runs less than query on data.
     * 
-    * @param {very_long_type} name           Description.
-    * @param {type}           very_long_name Description.
+    * @param {Query[]} query List of queries to run, here the length will always be 1.
+    * @param {Data[]} data The data to run the query on.
+    * @param {dataQuery} dataQuery.
     * 
-    * @return {type} Return value description. 
+    * @return {Data[]} Return Data set that satisfied the given query.
     **************************************************************************************************/
     LESS_THAN(query : Query[], data : Data[], dataQuery : DataQuery) : Data[]{
         if(!dataQuery.isNumberProperty(query[0].property) || isNaN(parseInt(query[0].value)))
-            throw new Error("ERROR while parsing query")
+            throw new Error("ERROR: property must be a number property, value must be a number")
 
         return data.filter((e : Data) => e[query[0].property] < parseInt(query[0].value))
     }
 
     /*************************************************************************************************
-    * Summary.
+    * Summary. Runs and query on data - AND(queries[0], ...., queries[n-1])(data)
     * 
-    * @param {very_long_type} name           Description.
-    * @param {type}           very_long_name Description.
+    * @param {Query[]} query List of queries to run.
+    * @param {Data[]} data The data to run the query on.
+    * @param {dataQuery} dataQuery.
     * 
-    * @return {type} Return value description. 
+    * @return {Data[]} Return Data set that satisfied the given query.
     **************************************************************************************************/
     AND(queries : Query[], data : Data[], dataQuery : DataQuery) : Data[]{
         return queries.reduce((acc, curr) => 
@@ -172,12 +175,13 @@ export class DataQuery {
     }
 
     /*************************************************************************************************
-    * Summary.
+    * Summary. Runs or query on data - OR(queries[0], ...., queries[n-1])(data)
     * 
-    * @param {very_long_type} name           Description.
-    * @param {type}           very_long_name Description.
+    * @param {Query[]} query List of queries to run.
+    * @param {Data[]} data The data to run the query on.
+    * @param {dataQuery} dataQuery.
     * 
-    * @return {type} Return value description. 
+    * @return {Data[]} Return Data set that satisfied the given query.
     **************************************************************************************************/
     OR(queries : Query[], data : Data[], dataQuery : DataQuery) : Data[]{
         return queries.reduce((acc, curr) => 
@@ -188,30 +192,32 @@ export class DataQuery {
     }
 
     /*************************************************************************************************
-    * Summary.
+    * Summary. Runs not query on data - NOT(query[0])(data)
     * 
-    * @param {very_long_type} name           Description.
-    * @param {type}           very_long_name Description.
+    * @param {Query[]} query List of queries to run, here the length will always be 1.
+    * @param {Data[]} data The data to run the query on.
+    * @param {dataQuery} dataQuery.
     * 
-    * @return {type} Return value description. 
+    * @return {Data[]} Return Data set that satisfied the given query.
     **************************************************************************************************/
     NOT(query : Query[], data : Data[], dataQuery : DataQuery) : Data[]{
-        let queried : Data[] = dataQuery.queryFunctions[query[0].type]([makeQuery(query[0].property, query[0].value, query[0].type)], dataQuery.data, dataQuery)
+        let queried : Data[] = 
+            dataQuery.queryFunctions[query[0].type]([makeQuery(query[0].property, query[0].value, query[0].type)], dataQuery.data, dataQuery)
         
         return dataQuery.data.filter((data2 : Data) => !queried.some((data1) => data1 === data2))
     }
-    
 
 
     /************************************** Parser **********************************************/
 
     /*************************************************************************************************
-    * Summary.
+    * Summary. Main parser, takes the parser that mapped to queryType
+    *          and parse query. 
     * 
-    * @param {very_long_type} name           Description.
-    * @param {type}           very_long_name Description.
+    * @param {string} queryType The type of the query to parse.
+    * @param {string} query Raw query string to parse.
     * 
-    * @return {type} Return value description. 
+    * @return {Query[]} List of parsed queries. 
     **************************************************************************************************/
     private parse(queryType : string, query : string) : Query[]{
         console.log("DataQuery: Parsing " + queryType)
@@ -220,12 +226,13 @@ export class DataQuery {
     }
 
     /*************************************************************************************************
-    * Summary.
+    * Summary. Parse equal expressions 
     * 
-    * @param {very_long_type} name           Description.
-    * @param {type}           very_long_name Description.
+    * @param {string} queryType The type of the query to parse.
+    * @param {string} query Raw query string to parse.
+    * @param {DataQuery} dataQuery 
     * 
-    * @return {type} Return value description. 
+    * @return {Query[]} List of parsed queries. 
     **************************************************************************************************/
     private parseEqual(queryType : string, query : string, dataQuery : DataQuery) : Query[] {
         let regExp : RegExp = /\(([^)]+)\)/
@@ -240,12 +247,13 @@ export class DataQuery {
     }
 
     /*************************************************************************************************
-    * Summary.
+    * Summary. Parse greater than and less than expressions 
     * 
-    * @param {very_long_type} name           Description.
-    * @param {type}           very_long_name Description.
+    * @param {string} queryType The type of the query to parse.
+    * @param {string} query Raw query string to parse.
+    * @param {DataQuery} dataQuery 
     * 
-    * @return {type} Return value description. 
+    * @return {Query[]} List of parsed queries. 
     **************************************************************************************************/
     private parseLessGreaterThan(queryType : string, query : string, dataQuery : DataQuery) : Query[]{
         let regExp : RegExp = /\(([^)]+)\)/
@@ -260,12 +268,13 @@ export class DataQuery {
     }
 
     /*************************************************************************************************
-    * Summary.
+    * Summary. Parse not expressions 
     * 
-    * @param {very_long_type} name           Description.
-    * @param {type}           very_long_name Description.
+    * @param {string} queryType The type of the query to parse.
+    * @param {string} query Raw query string to parse.
+    * @param {DataQuery} dataQuery 
     * 
-    * @return {type} Return value description. 
+    * @return {Query[]} List of parsed queries. 
     **************************************************************************************************/
     private parseNot(queryType : string, query : string, dataQuery : DataQuery) : Query[] {
         let inQueryType : string = dataQuery.getQueryType(query.substring(1, query.length - 1))
@@ -276,12 +285,13 @@ export class DataQuery {
     }
 
     /*************************************************************************************************
-    * Summary.
+    * Summary. Parse or and and expressions 
     * 
-    * @param {very_long_type} name           Description.
-    * @param {type}           very_long_name Description.
+    * @param {string} queryType The type of the query to parse.
+    * @param {string} query Raw query string to parse.
+    * @param {DataQuery} dataQuery 
     * 
-    * @return {type} Return value description. 
+    * @return {Query[]} List of parsed queries. 
     **************************************************************************************************/
     private parseOrAnd(queryType : string, query : string, dataQuery : DataQuery) : Query[]{
         let subQueries : Query[] = []
@@ -301,12 +311,13 @@ export class DataQuery {
     }
 
     /*************************************************************************************************
-    * Summary.
+    * Summary. parse operators
     * 
-    * @param {very_long_type} name           Description.
-    * @param {type}           very_long_name Description.
+    * @param {string} query The query to parse.
+    * @param {type} dataQuery 
     * 
-    * @return {type} Return value description. 
+    * @return {{parsed : string, rest : string}} parsed is the operator that parsed, 
+    *                                            rest is the rest of the string to be parsed
     **************************************************************************************************/
     private parseOperator = (query : string, dataQuery : DataQuery) : {parsed : string, rest : string} => {
         let parse = dataQuery.operators.map((op) => query.substring(0, op.length) === op ? op : undefined)
@@ -319,12 +330,13 @@ export class DataQuery {
     }
 
     /*************************************************************************************************
-    * Summary.
+    * Summary. parse pairs
     * 
-    * @param {very_long_type} name           Description.
-    * @param {type}           very_long_name Description.
+    * @param {string} query The query to parse.
+    * @param {type} dataQuery 
     * 
-    * @return {type} Return value description. 
+    * @return {{parsed : string, rest : string}} parsed is the operator that parsed, 
+    *                                            rest is the rest of the string to be parsed
     **************************************************************************************************/
     private parsePair = (query : string, dataQuery : DataQuery) : {parsed : string[], rest : string} => {
         let PARENS_LENGTH = 2

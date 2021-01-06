@@ -87,9 +87,9 @@ export class DataQuery {
 
         console.log("DataQuery: GET [" + rawQuery + "]")
 
-        let proccesed : Query[] = this.parse(queryType, query)
+        let parsed : Query[] = this.parse(queryType, query)
 
-        let reqData : Data[] = this.queryFunctions[queryType](proccesed, this.data, this) 
+        let reqData : Data[] = this.queryFunctions[queryType](parsed, this.data, this) 
                         
         return JSON.stringify(reqData,null, 2)
     }   
@@ -137,6 +137,9 @@ export class DataQuery {
     * @return {type} Return value description. 
     **************************************************************************************************/
     GREATER_THAN(query : Query[], data : Data[], dataQuery : DataQuery) : Data[]{
+        if(!dataQuery.isNumberProperty(query[0].property) || isNaN(parseInt(query[0].value)))
+            throw new Error("ERROR while parsing query")
+        
         return data.filter((e : Data) => e[query[0].property] > parseInt(query[0].value))
     }
 
@@ -149,6 +152,9 @@ export class DataQuery {
     * @return {type} Return value description. 
     **************************************************************************************************/
     LESS_THAN(query : Query[], data : Data[], dataQuery : DataQuery) : Data[]{
+        if(!dataQuery.isNumberProperty(query[0].property) || isNaN(parseInt(query[0].value)))
+            throw new Error("ERROR while parsing query")
+            
         return data.filter((e : Data) => e[query[0].property] < parseInt(query[0].value))
     }
 
@@ -249,10 +255,6 @@ export class DataQuery {
         let value : string = dataQuery.isNumberProperty(property) ? pair[1] : pair[1].substr(1,pair[1].length - 2)
 
         console.log("DataQuery: " + queryType + " Property[" + property + "] Value[" + parseInt(value) + "]")
-
-        if(!dataQuery.isNumberProperty(property) || isNaN(parseInt(value))){
-            throw new Error("ERROR while parsing query")
-        }
 
         return [makeQuery(property, value, queryType)]
     }

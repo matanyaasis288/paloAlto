@@ -82,7 +82,7 @@ export class DataQuery {
     * @return {string} Return json string with the answer to the query. 
     **************************************************************************************************/
     GET(rawQuery : string) : string {
-        let queryType : string = this.getQueryType(rawQuery)
+        let queryType : string = this.parseOperator(rawQuery,this).parsed
         let query : string = rawQuery.substring(queryType.length)
 
         console.log("DataQuery: GET [" + rawQuery + "]")
@@ -139,7 +139,7 @@ export class DataQuery {
     **************************************************************************************************/
     GREATER_THAN(query : Query[], data : Data[], dataQuery : DataQuery) : Data[]{
         if(!dataQuery.isNumberProperty(query[0].property) || isNaN(parseInt(query[0].value)))
-            throw new Error("ERROR: property must be a number property, value must be a number")
+            throw new Error("ERROR: property must be a number property, value must be a number.")
         
         return data.filter((e : Data) => e[query[0].property] > parseInt(query[0].value))
     }
@@ -235,15 +235,11 @@ export class DataQuery {
     * @return {Query[]} List of parsed queries. 
     **************************************************************************************************/
     private parseEqual(queryType : string, query : string, dataQuery : DataQuery) : Query[] {
-        let regExp : RegExp = /\(([^)]+)\)/
-        let parentExps : string[] = regExp.exec(query).map((exp) => exp.substring(1, exp.length - 1))
-        let pair = parentExps[0].split(',')
-        let property : string = pair[0]
-        let value : string = dataQuery.isNumberProperty(property) ? pair[1] : pair[1].substr(1,pair[1].length - 2)
+        let propertyValuePair = dataQuery.parsePair(query, dataQuery).parsed
 
-        console.log("DataQuery: EQUAL Property[" + property + "] Value[" + value + "]")
+        console.log("DataQuery: EQUAL Property[" + propertyValuePair[0] + "] Value[" + propertyValuePair[1] + "]")
 
-        return [makeQuery(property, value, "EQUAL")]
+        return [makeQuery(propertyValuePair[0], propertyValuePair[1], "EQUAL")]
     }
 
     /*************************************************************************************************
@@ -256,15 +252,11 @@ export class DataQuery {
     * @return {Query[]} List of parsed queries. 
     **************************************************************************************************/
     private parseLessGreaterThan(queryType : string, query : string, dataQuery : DataQuery) : Query[]{
-        let regExp : RegExp = /\(([^)]+)\)/
-        let parentExps : string[] = regExp.exec(query).map((exp) => exp.substring(1, exp.length - 1))
-        let pair = parentExps[0].split(',')
-        let property : string = pair[0]
-        let value : string = dataQuery.isNumberProperty(property) ? pair[1] : pair[1].substr(1,pair[1].length - 2)
+        let propertyValuePair = dataQuery.parsePair(query, dataQuery).parsed
 
-        console.log("DataQuery: " + queryType + " Property[" + property + "] Value[" + parseInt(value) + "]")
+        console.log("DataQuery: " + queryType + " Property[" +  propertyValuePair[0] + "] Value[" + propertyValuePair[1] + "]")
 
-        return [makeQuery(property, value, queryType)]
+        return [makeQuery(propertyValuePair[0], propertyValuePair[1], queryType)]
     }
 
     /*************************************************************************************************
@@ -277,11 +269,15 @@ export class DataQuery {
     * @return {Query[]} List of parsed queries. 
     **************************************************************************************************/
     private parseNot(queryType : string, query : string, dataQuery : DataQuery) : Query[] {
-        let inQueryType : string = dataQuery.getQueryType(query.substring(1, query.length - 1))
-        let inQuery : string = query.substring(inQueryType.length)
-        let proccesedInQuery : Query[] = dataQuery.parse(inQueryType, inQuery)
+        if(query.indexOf('(') !== 0 || query.indexOf(')') === query.length - 1)
+            throw new Error("ERROR: parsing error")
 
-        return [makeQuery(proccesedInQuery[0].property, proccesedInQuery[0].value, proccesedInQuery[0].type)]
+        query = query.substring(1,query.length - 1)
+        let operator = dataQuery.parseOperator(query, dataQuery).parsed
+        let rawPair = dataQuery.parseOperator(query, dataQuery).rest
+        let propertyValuePair = dataQuery.parsePair(rawPair, dataQuery).parsed
+
+        return [makeQuery(propertyValuePair[0], propertyValuePair[1], operator)]
     }
 
     /*************************************************************************************************
@@ -324,7 +320,7 @@ export class DataQuery {
                              .reduce((acc, curr) => curr !== undefined ? curr : acc, undefined) 
 
         if(parse === undefined)
-            throw new Error("ERROR while parsing query")                          
+            throw new Error("ERROR: parsing error")                          
 
         return {parsed : parse, rest : query.substring(parse.length)}                 
     }
@@ -342,12 +338,12 @@ export class DataQuery {
         let PARENS_LENGTH = 2
         
         if(query.indexOf('(') !== 0 || query.indexOf(')') === -1)
-            throw new Error("ERROR while parsing query")
+            throw new Error("ERROR: parsing error")
 
         let pair : string = query.substring(query.indexOf('(') + 1, query.indexOf(')'))
 
         if(pair.split(",").length !== 2)
-            throw new Error("ERROR while parsing query")
+            throw new Error("ERROR: parsing error")
 
         return  {parsed : pair.split(","), rest : query.substring(pair.length + PARENS_LENGTH)}
     }
@@ -355,16 +351,6 @@ export class DataQuery {
 
     /************************************** HELPERS **********************************************/
 
-    /*************************************************************************************************
-    * Summary.
-    * 
-    * @param {very_long_type} name           Description.
-    * @param {type}           very_long_name Description.
-    * 
-    * @return {type} Return value description. 
-    **************************************************************************************************/
-    private isQuery : (queryType :string, rawQuery : string) => boolean =
-        (queryType : string, rawQuery : string) => rawQuery.indexOf(queryType) == 0
 
     /*************************************************************************************************
     * Summary.
@@ -374,23 +360,7 @@ export class DataQuery {
     * 
     * @return {type} Return value description. 
     **************************************************************************************************/
-    private getQueryType : (rawQuery : string) => string = 
-        (rawQuery : string) => this.isQuery("EQUAL", rawQuery) ? "EQUAL" :
-                               this.isQuery("AND", rawQuery) ? "AND" :
-                               this.isQuery("OR", rawQuery) ? "OR" :
-                               this.isQuery("NOT", rawQuery) ? "NOT" :
-                               this.isQuery("GREATER_THAN", rawQuery) ? "GREATER_THAN" :
-                               this.isQuery("LESS_THAN", rawQuery) ? "LESS_THAN" : "ERROR"
-
-    /*************************************************************************************************
-    * Summary.
-    * 
-    * @param {very_long_type} name           Description.
-    * @param {type}           very_long_name Description.
-    * 
-    * @return {type} Return value description. 
-    **************************************************************************************************/
-    private isNumberProperty = (property : string | number) => this.numberProperties.some((p) => p === property)
+    private isNumberProperty = (property : string) => this.numberProperties.some((p) => p === property)
 
 }
 

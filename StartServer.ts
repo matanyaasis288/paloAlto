@@ -31,7 +31,7 @@ server.get("/store", (req, res) => {
             console.log("Server: RETURN " + dataQuery.GET(req.query.query))
         }
         catch(e){
-            res.send(e.Message)
+            res.send(e.message)
         }      
     }
     else{
@@ -42,10 +42,18 @@ server.get("/store", (req, res) => {
 server.post("/store", (req, res) => {
     if(req.body !== undefined){
         console.log("Server: POST " + JSON.stringify(req.body))
-        dataQuery.POST(JSON.stringify(req.body))
-        res.sendStatus(200)
+        try{
+            dataQuery.POST(JSON.stringify(req.body))
+            res.sendStatus(200)
+        }
+        catch(e){
+            res.status(500)
+            res.send(e.message)
+        }
+        
     }
     else{
+        res.status(500)
         res.send("ERROR: you must provide json")
     }
 })

@@ -27,8 +27,8 @@ export const makeQuery =
 *    
 *    1. The class fields  
 *    2. API functions for outside use
-*    3. String Parsers
-*    4. Helper functions    
+*    3. Private string Parsers
+*    4. Private helper functions    
 * 
 **************************************************************************************************/
 export class DataQuery {

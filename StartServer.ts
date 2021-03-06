@@ -37,9 +37,8 @@ exp.get("/api/v1/stats", (req, res) => {
 })
 
 exp.get("/api/v1/similar", (req, res) => {
-    console.log(req.query)
     if(req.query.word !== undefined){
-        console.log("Server: GET similar?word=" + req.query.word)   
+        console.log("Server: Received GET similar?word=" + req.query.word)   
         try{
             server.getHandler(makeCommand('similar', req.query.word), res)
         }
@@ -55,6 +54,6 @@ exp.get("/api/v1/similar", (req, res) => {
 /*************************************************************************************************
 * Start listening on the given port
 **************************************************************************************************/
-exp.listen(5000, () => {
+exp.listen(8000, () => {
     console.log("Server Started!")
 })
